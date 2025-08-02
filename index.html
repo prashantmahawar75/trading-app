@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradeX - GOOGLE Order Book</title>
+    <style>
+        :root {
+            --bg-primary: #121826;
+            --bg-secondary: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --bid: #10b981;
+            --ask: #ef4444;
+            --border: #334155;
+        }
+
+        .light-theme {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #e2e8f0;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --bid: #059669;
+            --ask: #dc2626;
+            --border: #cbd5e1;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .ticker-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .ticker {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .quote {
+            display: flex;
+            gap: 30px;
+        }
+
+        .quote-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .quote-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .bid-price {
+            color: var(--bid);
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .ask-price {
+            color: var(--ask);
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .theme-toggle {
+            background: var(--bg-secondary);
+            border: none;
+            color: var(--text-primary);
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .theme-toggle:hover {
+            background: var(--accent);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .order-book, .order-form, .balance {
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: var(--accent);
+        }
+
+        .depth-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .bid-row {
+            color: var(--bid);
+        }
+
+        .ask-row {
+            color: var(--ask);
+        }
+
+        .order-form form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .form-group input, .form-group select {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid var(--border);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .side-toggle {
+            display: flex;
+            border-radius: 5px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .side-toggle button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+        }
+
+        .side-toggle button.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .side-toggle button:first-child.active {
+            background: var(--bid);
+        }
+
+        .side-toggle button:last-child.active {
+            background: var(--ask);
+        }
+
+        .submit-btn {
+            padding: 12px;
+            border-radius: 5px;
+            border: none;
+            background: var(--accent);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .balance-info {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .balance-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .balance-label {
+            color: var(--text-secondary);
+        }
+
+        .balance-value {
+            font-weight: bold;
+        }
+
+        .success-message {
+            color: var(--bid);
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .error-message {
+            color: var(--ask);
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">TradeX</div>
+            <div class="ticker-info">
+                <div class="ticker">GOOGLE</div>
+                <div class="quote">
+                    <div class="quote-item">
+                        <div class="quote-label">Bid</div>
+                        <div class="bid-price" id="best-bid">-</div>
+                    </div>
+                    <div class="quote-item">
+                        <div class="quote-label">Ask</div>
+                        <div class="ask-price" id="best-ask">-</div>
+                    </div>
+                </div>
+            </div>
+            <button class="theme-toggle" id="theme-toggle">
+                <span id="theme-icon">🌙</span>
+                <span id="theme-text">Dark</span>
+            </button>
+        </header>
+
+        <div class="main-content">
+            <div class="order-book">
+                <h2 class="section-title">Order Book Depth</h2>
+                <div id="depth-container">
+                    <div class="depth-row">
+                        <span>Price</span>
+                        <span>Quantity</span>
+                        <span>Type</span>
+                    </div>
+                    <div id="depth-rows"></div>
+                </div>
+            </div>
+
+            <div class="order-form">
+                <h2 class="section-title">Place Order</h2>
+                <form id="order-form">
+                    <div class="form-group">
+                        <label for="user-id">User ID</label>
+                        <select id="user-id" required>
+                            <option value="">Select User</option>
+                            <option value="1">User 1</option>
+                            <option value="2">User 2</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Side</label>
+                        <div class="side-toggle">
+                            <button type="button" class="active" data-side="bid">Buy</button>
+                            <button type="button" data-side="ask">Sell</button>
+                        </div>
+                        <input type="hidden" id="side" name="side" value="bid" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="price">Price</label>
+                        <input type="number" id="price" name="price" step="0.01" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="quantity">Quantity</label>
+                        <input type="number" id="quantity" name="quantity" min="1" required>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Place Order</button>
+                    <div id="order-message"></div>
+                </form>
+            </div>
+
+            <div class="balance">
+                <h2 class="section-title">Balance</h2>
+                <div class="form-group">
+                    <label for="balance-user-id">Select User</label>
+                    <select id="balance-user-id">
+                        <option value="">Select User</option>
+                        <option value="1">User 1</option>
+                        <option value="2">User 2</option>
+                    </select>
+                </div>
+                <div class="balance-info" id="balance-info">
+                    <div class="balance-item">
+                        <span class="balance-label">GOOGLE</span>
+                        <span class="balance-value" id="google-balance">-</span>
+                    </div>
+                    <div class="balance-item">
+                        <span class="balance-label">USD</span>
+                        <span class="balance-value" id="usd-balance">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const themeText = document.getElementById('theme-text');
+        let isDarkTheme = true;
+
+        themeToggle.addEventListener('click', () => {
+            isDarkTheme = !isDarkTheme;
+            if (isDarkTheme) {
+                document.documentElement.classList.remove('light-theme');
+                themeIcon.textContent = '🌙';
+                themeText.textContent = 'Dark';
+            } else {
+                document.documentElement.classList.add('light-theme');
+                themeIcon.textContent = '☀️';
+                themeText.textContent = 'Light';
+            }
+        });
+
+        // Side toggle
+        const sideButtons = document.querySelectorAll('.side-toggle button');
+        const sideInput = document.getElementById('side');
+
+        sideButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                sideButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                sideInput.value = button.dataset.side;
+            });
+        });
+
+        // Order form submission
+        const orderForm = document.getElementById('order-form');
+        const orderMessage = document.getElementById('order-message');
+
+        orderForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const userId = document.getElementById('user-id').value;
+            const side = document.getElementById('side').value;
+            const price = parseFloat(document.getElementById('price').value);
+            const quantity = parseInt(document.getElementById('quantity').value);
+
+            try {
+                const response = await fetch('/order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userId,
+                        side,
+                        price,
+                        quantity
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    orderMessage.textContent = `Order placed successfully! Filled: ${data.filledQuantity}`;
+                    orderMessage.className = 'success-message';
+                    
+                    // Refresh data
+                    fetchDepth();
+                    fetchQuote();
+                    if (userId === document.getElementById('balance-user-id').value) {
+                        fetchBalance(userId);
+                    }
+                } else {
+                    throw new Error(data.message || 'Failed to place order');
+                }
+            } catch (error) {
+                orderMessage.textContent = error.message;
+                orderMessage.className = 'error-message';
+            }
+            
+            // Clear form
+            document.getElementById('price').value = '';
+            document.getElementById('quantity').value = '';
+            
+            setTimeout(() => {
+                orderMessage.textContent = '';
+                orderMessage.className = '';
+            }, 5000);
+        });
+
+        // Balance fetch
+        const balanceUserId = document.getElementById('balance-user-id');
+        const googleBalance = document.getElementById('google-balance');
+        const usdBalance = document.getElementById('usd-balance');
+
+        balanceUserId.addEventListener('change', (e) => {
+            const userId = e.target.value;
+            if (userId) {
+                fetchBalance(userId);
+            } else {
+                googleBalance.textContent = '-';
+                usdBalance.textContent = '-';
+            }
+        });
+
+        async function fetchBalance(userId) {
+            try {
+                const response = await fetch(`/balance/${userId}`);
+                const data = await response.json();
+                
+                googleBalance.textContent = data.balances?.GOOGLE || 0;
+                usdBalance.textContent = data.balances?.USD || 0;
+            } catch (error) {
+                console.error('Error fetching balance:', error);
+            }
+        }
+
+        // Fetch order book depth
+        const depthRows = document.getElementById('depth-rows');
+
+        async function fetchDepth() {
+            try {
+                const response = await fetch('/depth');
+                const data = await response.json();
+                
+                // Clear existing rows
+                depthRows.innerHTML = '';
+                
+                // Sort prices and separate bids and asks
+                const prices = Object.keys(data.depth).map(Number).sort((a, b) => b - a);
+                
+                // Display asks (highest first)
+                prices.filter(price => data.depth[price].type === 'ask').forEach(price => {
+                    const row = document.createElement('div');
+                    row.className = 'depth-row ask-row';
+                    row.innerHTML = `
+                        <span>${price.toFixed(2)}</span>
+                        <span>${data.depth[price].quantity}</span>
+                        <span>Ask</span>
+                    `;
+                    depthRows.appendChild(row);
+                });
+                
+                // Display bids (highest first)
+                prices.filter(price => data.depth[price].type === 'bid').forEach(price => {
+                    const row = document.createElement('div');
+                    row.className = 'depth-row bid-row';
+                    row.innerHTML = `
+                        <span>${price.toFixed(2)}</span>
+                        <span>${data.depth[price].quantity}</span>
+                        <span>Bid</span>
+                    `;
+                    depthRows.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error fetching depth:', error);
+            }
+        }
+
+        // Fetch quote
+        const bestBidElement = document.getElementById('best-bid');
+        const bestAskElement = document.getElementById('best-ask');
+
+        async function fetchQuote() {
+            try {
+                const response = await fetch('/quote');
+                const data = await response.json();
+                
+                bestBidElement.textContent = data.bestBid ? data.bestBid.toFixed(2) : '-';
+                bestAskElement.textContent = data.bestAsk ? data.bestAsk.toFixed(2) : '-';
+            } catch (error) {
+                console.error('Error fetching quote:', error);
+            }
+        }
+
+        // Initial data load
+        fetchDepth();
+        fetchQuote();
+
+        // Poll for updates every 5 seconds
+        setInterval(() => {
+            fetchDepth();
+            fetchQuote();
+            
+            // Refresh balance if a user is selected
+            const userId = balanceUserId.value;
+            if (userId) {
+                fetchBalance(userId);
+            }
+        }, 5000);
+    </script>
+</body>
+</html>
